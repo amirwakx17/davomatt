@@ -1,0 +1,14 @@
+{
+  "name": "attendance-system",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Student attendance tracking system (Student, Group, Attendance)",
+  "type": "module",
+  "engines": {
+    "node": "24.x"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  }
+}
