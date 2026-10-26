@@ -50,11 +50,14 @@ async function connectEmbedded() {
   };
 }
 
-const databaseUrl = process.env.DATABASE_URL;
+const databaseUrl = process.env.DATABASE_URL?.trim();
+// The embedded fallback needs >512 MB (Render free limit) and loses data on every restart.
 if (!databaseUrl && process.env.NODE_ENV === "production") {
-  console.warn(
-    "DIQQAT: DATABASE_URL o'rnatilmagan. Ma'lumotlar vaqtinchalik saqlanadi va qayta ishga tushganda yo'qoladi."
+  console.error(
+    "XATO: DATABASE_URL o'rnatilmagan. Render → Environment bo'limiga Neon'dan olingan " +
+      "postgresql://... manzilini DATABASE_URL nomi bilan qo'shing va qayta deploy qiling."
   );
+  process.exit(1);
 }
 
 const driver = databaseUrl ? await connectPostgres(databaseUrl) : await connectEmbedded();
