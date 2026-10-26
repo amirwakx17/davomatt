@@ -2,13 +2,13 @@ import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { isValidISODate, todayISO } from "./src/lib/date.js";
-import { Attendance } from "./src/models/attendance.js";
-import { Group } from "./src/models/group.js";
-import { Student } from "./src/models/student.js";
-import { renderAttendancePage } from "./src/views/attendance.js";
-import { renderDashboard } from "./src/views/dashboard.js";
-import { renderNotFound, renderServerError } from "./src/views/error.js";
+import { csrfMatches, getSession } from "./src/lib/auth.js";
+import { parseId, readBody, redirect, sendHtml } from "./src/lib/http.js";
+import * as adminRoutes from "./src/routes/admin.js";
+import * as attendanceRoutes from "./src/routes/attendance.js";
+import * as authRoutes from "./src/routes/auth.js";
+import { renderForbidden, renderNotFound, renderServerError } from "./src/views/error.js";
+import { layout } from "./src/views/layout.js";
 
 const projectRoot = path.dirname(fileURLToPath(import.meta.url));
 const publicDir = path.join(projectRoot, "public");
@@ -22,37 +22,31 @@ const CONTENT_TYPES = {
   ".ico": "image/x-icon",
 };
 
-function sendHtml(res, status, html) {
-  res.writeHead(status, {
-    "Content-Type": "text/html; charset=utf-8",
-    "Cache-Control": "no-store",
-    "X-Content-Type-Options": "nosniff",
-  });
-  res.end(html);
-}
+const PUBLIC_ROUTES = [
+  { method: "GET", pattern: /^\/login$/, handler: authRoutes.showLogin },
+  { method: "POST", pattern: /^\/login$/, handler: authRoutes.login },
+];
 
-function redirect(res, location) {
-  res.writeHead(303, { Location: location });
-  res.end();
-}
-
-function readBody(req, limit = 100_000) {
-  return new Promise((resolve, reject) => {
-    const chunks = [];
-    let size = 0;
-    req.on("data", (chunk) => {
-      size += chunk.length;
-      if (size > limit) {
-        reject(new Error("Payload too large"));
-        req.destroy();
-        return;
-      }
-      chunks.push(chunk);
-    });
-    req.on("end", () => resolve(Buffer.concat(chunks).toString("utf8")));
-    req.on("error", reject);
-  });
-}
+const ROUTES = [
+  { method: "GET", pattern: /^\/$/, handler: attendanceRoutes.dashboard },
+  { method: "GET", pattern: /^\/groups\/(\d+)\/attendance$/, handler: attendanceRoutes.showSheet },
+  { method: "POST", pattern: /^\/groups\/(\d+)\/attendance$/, handler: attendanceRoutes.saveSheet },
+  { method: "POST", pattern: /^\/logout$/, handler: authRoutes.logout },
+  { method: "GET", pattern: /^\/account$/, handler: authRoutes.showAccount },
+  { method: "POST", pattern: /^\/account\/password$/, handler: authRoutes.changePassword },
+  { method: "GET", pattern: /^\/admin\/groups$/, handler: adminRoutes.listGroups, admin: true },
+  { method: "POST", pattern: /^\/admin\/groups$/, handler: adminRoutes.createGroup, admin: true },
+  { method: "GET", pattern: /^\/admin\/groups\/(\d+)$/, handler: adminRoutes.showGroup, admin: true },
+  { method: "POST", pattern: /^\/admin\/groups\/(\d+)$/, handler: adminRoutes.updateGroup, admin: true },
+  { method: "POST", pattern: /^\/admin\/groups\/(\d+)\/delete$/, handler: adminRoutes.deleteGroup, admin: true },
+  { method: "POST", pattern: /^\/admin\/groups\/(\d+)\/students$/, handler: adminRoutes.addStudents, admin: true },
+  { method: "POST", pattern: /^\/admin\/students\/(\d+)$/, handler: adminRoutes.renameStudent, admin: true },
+  { method: "POST", pattern: /^\/admin\/students\/(\d+)\/delete$/, handler: adminRoutes.deleteStudent, admin: true },
+  { method: "GET", pattern: /^\/admin\/users$/, handler: adminRoutes.listUsers, admin: true },
+  { method: "POST", pattern: /^\/admin\/users$/, handler: adminRoutes.createUser, admin: true },
+  { method: "POST", pattern: /^\/admin\/users\/(\d+)\/password$/, handler: adminRoutes.resetPassword, admin: true },
+  { method: "POST", pattern: /^\/admin\/users\/(\d+)\/delete$/, handler: adminRoutes.deleteUser, admin: true },
+];
 
 async function serveStatic(res, relativePath) {
   const filePath = path.resolve(publicDir, relativePath);
@@ -76,86 +70,17 @@ async function serveStatic(res, relativePath) {
   }
 }
 
-function showDashboard(res) {
-  const today = todayISO();
-  const groups = Group.withAttendance(today);
-  const totals = Attendance.totalsForDate(today);
-  const recent = Attendance.recentSessions(6);
-
-  sendHtml(
-    res,
-    200,
-    renderDashboard({
-      today,
-      groups,
-      totals,
-      studentTotal: Student.count(),
-      recent,
-    })
-  );
+function match(routes, method, pathname) {
+  for (const route of routes) {
+    if (route.method !== method) continue;
+    const found = pathname.match(route.pattern);
+    if (found) return { route, params: found.slice(1) };
+  }
+  return null;
 }
 
-function showAttendanceSheet(res, url, groupId) {
-  const group = Group.find(groupId);
-  if (!group) {
-    sendHtml(res, 404, renderNotFound());
-    return;
-  }
-
-  const requestedDate = url.searchParams.get("date");
-  const date = isValidISODate(requestedDate) ? requestedDate : todayISO();
-  const students = Student.allByGroup(groupId);
-  const statuses = new Map(
-    Attendance.byGroupAndDate(groupId, date).map((row) => [row.student_id, row.status])
-  );
-
-  sendHtml(
-    res,
-    200,
-    renderAttendancePage({
-      group,
-      students,
-      date,
-      statuses,
-      saved: url.searchParams.get("saved") === "1",
-      error: url.searchParams.get("error"),
-    })
-  );
-}
-
-async function saveAttendance(req, res, groupId) {
-  const group = Group.find(groupId);
-  if (!group) {
-    sendHtml(res, 404, renderNotFound());
-    return;
-  }
-
-  const body = new URLSearchParams(await readBody(req));
-  const date = body.get("date");
-
-  if (!isValidISODate(date)) {
-    redirect(res, `/groups/${groupId}/attendance?error=date`);
-    return;
-  }
-
-  const students = Student.allByGroup(groupId);
-  if (students.length === 0) {
-    redirect(res, `/groups/${groupId}/attendance?date=${date}&error=empty`);
-    return;
-  }
-
-  const entries = [];
-  for (const student of students) {
-    const status = body.get(`status-${student.id}`);
-    if (status !== "present" && status !== "absent") {
-      redirect(res, `/groups/${groupId}/attendance?date=${date}&error=mark`);
-      return;
-    }
-    entries.push({ studentId: student.id, status });
-  }
-
-  Attendance.saveGroupDate(groupId, date, entries);
-  redirect(res, `/groups/${groupId}/attendance?date=${date}&saved=1`);
+function pathExists(pathname) {
+  return [...PUBLIC_ROUTES, ...ROUTES].some((route) => route.pattern.test(pathname));
 }
 
 async function handleRequest(req, res) {
@@ -165,7 +90,7 @@ async function handleRequest(req, res) {
   try {
     pathname = decodeURIComponent(url.pathname);
   } catch {
-    sendHtml(res, 404, renderNotFound());
+    sendHtml(res, 404, layout(renderNotFound()));
     return;
   }
 
@@ -174,32 +99,73 @@ async function handleRequest(req, res) {
     return;
   }
 
-  if (pathname === "/" && req.method === "GET") {
-    showDashboard(res);
+  if (pathname === "/healthz") {
+    res.writeHead(200, { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" });
+    res.end("ok");
     return;
   }
 
-  const attendanceMatch = pathname.match(/^\/groups\/(\d+)\/attendance\/?$/);
-  if (attendanceMatch) {
-    const groupId = Number(attendanceMatch[1]);
-    if (req.method === "GET") {
-      showAttendanceSheet(res, url, groupId);
-      return;
-    }
-    if (req.method === "POST") {
-      await saveAttendance(req, res, groupId);
-      return;
+  if (pathname.length > 1 && pathname.endsWith("/")) pathname = pathname.slice(0, -1);
+
+  const session = await getSession(req);
+  const user = session?.user ?? null;
+  const csrf = session?.csrf ?? "";
+
+  const ctx = {
+    req,
+    res,
+    url,
+    session,
+    user,
+    csrf,
+    params: [],
+    body: new URLSearchParams(),
+    render(view, status = 200) {
+      sendHtml(res, status, layout({ ...view, user, csrf }));
+    },
+    redirect(location, headers) {
+      redirect(res, location, headers);
+    },
+    notFound() {
+      ctx.render(renderNotFound(), 404);
+    },
+  };
+
+  const publicMatch = match(PUBLIC_ROUTES, req.method, pathname);
+  if (publicMatch) {
+    if (req.method === "POST") ctx.body = new URLSearchParams(await readBody(req));
+    await publicMatch.route.handler(ctx);
+    return;
+  }
+
+  const found = match(ROUTES, req.method, pathname);
+  if (!found) {
+    if (!user && pathExists(pathname)) return ctx.redirect("/login");
+    return ctx.notFound();
+  }
+
+  if (!user) return ctx.redirect("/login");
+  if (found.route.admin && user.role !== "admin") return ctx.render(renderForbidden(), 403);
+
+  const params = found.params.map(parseId);
+  if (params.includes(null)) return ctx.notFound();
+  ctx.params = params;
+
+  if (req.method === "POST") {
+    ctx.body = new URLSearchParams(await readBody(req));
+    if (!csrfMatches(session, ctx.body.get("_csrf"))) {
+      return ctx.render(renderForbidden(), 403);
     }
   }
 
-  sendHtml(res, 404, renderNotFound());
+  await found.route.handler(ctx);
 }
 
 const server = createServer((req, res) => {
   handleRequest(req, res).catch((error) => {
     console.error(error);
     if (!res.headersSent) {
-      sendHtml(res, 500, renderServerError());
+      sendHtml(res, 500, layout(renderServerError()));
     } else {
       res.end();
     }

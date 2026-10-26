@@ -1,7 +1,7 @@
 import { formatLongDate } from "../lib/date.js";
 import { escapeHtml, initials, toneFor } from "../lib/html.js";
 import { icon } from "../lib/icons.js";
-import { layout } from "./layout.js";
+import { csrfField } from "./layout.js";
 
 const ERROR_MESSAGES = {
   mark: "Saqlashdan oldin har bir talabani belgilang.",
@@ -33,7 +33,7 @@ function studentRow(student, index, status) {
     </div>`;
 }
 
-export function renderAttendancePage({ group, students, date, statuses, saved, error }) {
+export function renderAttendancePage({ group, students, date, statuses, saved, error, csrf, isAdmin }) {
   const total = students.length;
   const present = [...statuses.values()].filter((status) => status === "present").length;
   const absent = [...statuses.values()].filter((status) => status === "absent").length;
@@ -65,6 +65,7 @@ export function renderAttendancePage({ group, students, date, statuses, saved, e
   const sheet =
     total > 0
       ? `<form id="attendance-form" method="post" action="/groups/${group.id}/attendance">
+          ${csrfField(csrf)}
           <input type="hidden" name="date" value="${escapeHtml(date)}">
           <div class="student-list">${rows}</div>
           <div class="form-error" id="form-error" hidden>
@@ -83,7 +84,11 @@ export function renderAttendancePage({ group, students, date, statuses, saved, e
             <button class="btn btn-primary" type="submit">${icon("clipboard")}Davomatni saqlash</button>
           </footer>
         </form>`
-      : `<div class="empty-state">Bu guruhda hali talabalar yo'q.</div>`;
+      : `<div class="empty-state">Bu guruhda hali talabalar yo'q.${
+          isAdmin
+            ? ` <a class="text-link" href="/admin/groups/${group.id}">Talabalarni qo'shing</a>.`
+            : ""
+        }</div>`;
 
   const body = `
     <nav class="breadcrumb" aria-label="Navigatsiya">
@@ -96,7 +101,7 @@ export function renderAttendancePage({ group, students, date, statuses, saved, e
       <div>
         <p class="eyebrow">Davomat varag'i</p>
         <h1>${escapeHtml(group.name)}</h1>
-        <p class="lede">${escapeHtml(group.course)} · ${escapeHtml(group.schedule)} · ${total} ta talaba</p>
+        <p class="lede">${[group.course, group.schedule, `${total} ta talaba`].filter(Boolean).map(escapeHtml).join(" · ")}</p>
       </div>
       <form class="date-picker" method="get" action="/groups/${group.id}/attendance">
         <label for="lesson-date">Dars sanasi</label>
@@ -117,7 +122,14 @@ export function renderAttendancePage({ group, students, date, statuses, saved, e
             <h2>Talabalar</h2>
             <p class="muted">Bu guruhda ${total} ta talaba</p>
           </div>
-          <span class="chip ${savedChipClass}">${escapeHtml(savedLabel)}</span>
+          <div class="sheet-header-actions">
+            ${
+              isAdmin
+                ? `<a class="btn btn-ghost btn-sm" href="/admin/groups/${group.id}">${icon("settings")}Boshqarish</a>`
+                : ""
+            }
+            <span class="chip ${savedChipClass}">${escapeHtml(savedLabel)}</span>
+          </div>
         </header>
         ${sheet}
       </section>
@@ -132,7 +144,8 @@ export function renderAttendancePage({ group, students, date, statuses, saved, e
             <div><dt>Guruh</dt><dd>${escapeHtml(group.name)}</dd></div>
             <div><dt>Sana</dt><dd>${escapeHtml(formatLongDate(date))}</dd></div>
             <div><dt>Kurs</dt><dd>${escapeHtml(group.course)}</dd></div>
-            <div><dt>Dars vaqti</dt><dd>${escapeHtml(group.schedule)}</dd></div>
+            <div><dt>Dars vaqti</dt><dd>${escapeHtml(group.schedule || "—")}</dd></div>
+            <div><dt>O'qituvchi</dt><dd>${escapeHtml(group.teacher_name || "Biriktirilmagan")}</dd></div>
             <div><dt>Talabalar</dt><dd>${total}</dd></div>
           </dl>
           <div class="details-progress">
@@ -163,5 +176,5 @@ export function renderAttendancePage({ group, students, date, statuses, saved, e
       </aside>
     </div>`;
 
-  return layout({ title: `${group.name} · Davomat`, body });
+  return { title: `${group.name} · Davomat`, body, active: "dashboard" };
 }

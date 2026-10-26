@@ -1,7 +1,6 @@
 import { formatLongDate, formatShortDate } from "../lib/date.js";
 import { escapeHtml, initials, toneFor } from "../lib/html.js";
 import { icon } from "../lib/icons.js";
-import { layout } from "./layout.js";
 
 function statCard({ label, value, hint, iconName, tone }) {
   return `
@@ -92,9 +91,13 @@ function recentRow(session) {
     </tr>`;
 }
 
-export function renderDashboard({ today, groups, totals, studentTotal, recent }) {
+export function renderDashboard({ today, groups, totals, studentTotal, recent, user }) {
+  const isAdmin = user.role === "admin";
   const markedToday = totals.present + totals.absent;
   const groupCards = groups.map(groupCard).join("");
+  const emptyGroups = isAdmin
+    ? `Hali guruh yo'q. <a class="text-link" href="/admin/groups">Birinchi guruhni yarating</a>.`
+    : "Sizga hali guruh biriktirilmagan. Administratorga murojaat qiling.";
 
   const recentTable =
     recent.length > 0
@@ -116,11 +119,18 @@ export function renderDashboard({ today, groups, totals, studentTotal, recent })
   const body = `
     <section class="hero">
       <div>
-        <p class="eyebrow">Umumiy ko'rinish</p>
+        <p class="eyebrow">Xush kelibsiz, ${escapeHtml(user.fullName)}</p>
         <h1>Davomat bo'yicha umumiy ko'rinish</h1>
-        <p class="lede">Guruhlaringizdagi kundalik davomatni nazorat qiling va har bir darsni hisobda turing.</p>
+        <p class="lede">${
+          isAdmin
+            ? "Barcha guruhlardagi kundalik davomatni nazorat qiling va har bir darsni hisobda turing."
+            : "Sizga biriktirilgan guruhlarning kundalik davomatini belgilang."
+        }</p>
       </div>
-      <span class="date-pill">${icon("calendar")}${escapeHtml(formatLongDate(today))}</span>
+      <div class="hero-actions">
+        <span class="date-pill">${icon("calendar")}${escapeHtml(formatLongDate(today))}</span>
+        ${isAdmin ? `<a class="btn btn-primary" href="/admin/groups">${icon("plus")}Guruh qo'shish</a>` : ""}
+      </div>
     </section>
 
     <section class="stats-grid" aria-label="Umumiy statistika">
@@ -134,7 +144,7 @@ export function renderDashboard({ today, groups, totals, studentTotal, recent })
       ${statCard({
         label: "Talabalar",
         value: studentTotal,
-        hint: "Barcha guruhlar bo'yicha",
+        hint: isAdmin ? "Barcha guruhlar bo'yicha" : "Sizning guruhlaringizda",
         iconName: "users",
         tone: "blue",
       })}
@@ -157,7 +167,7 @@ export function renderDashboard({ today, groups, totals, studentTotal, recent })
     <section class="section" id="groups">
       <div class="section-head">
         <div>
-          <h2>Sizning guruhlaringiz</h2>
+          <h2>${isAdmin ? "Barcha guruhlar" : "Sizning guruhlaringiz"}</h2>
           <p class="muted">Bugungi davomatni belgilash uchun guruh tanlang.</p>
         </div>
         <span class="chip chip-soft">${groups.length} ta guruh</span>
@@ -165,7 +175,7 @@ export function renderDashboard({ today, groups, totals, studentTotal, recent })
       ${
         groups.length > 0
           ? `<div class="group-grid">${groupCards}</div>`
-          : `<div class="panel empty-state">Hali guruh qo'shilmagan.</div>`
+          : `<div class="panel empty-state">${emptyGroups}</div>`
       }
     </section>
 
@@ -179,5 +189,5 @@ export function renderDashboard({ today, groups, totals, studentTotal, recent })
       <div class="panel table-panel">${recentTable}</div>
     </section>`;
 
-  return layout({ title: "Bosh sahifa", body, active: "dashboard" });
+  return { title: "Bosh sahifa", body, active: "dashboard" };
 }

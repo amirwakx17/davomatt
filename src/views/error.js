@@ -1,22 +1,31 @@
 import { icon } from "../lib/icons.js";
-import { layout } from "./layout.js";
 
 function errorPage({ title, message, code }) {
-  const body = `
+  return {
+    title,
+    body: `
     <section class="error-state">
       <span class="error-code">${code}</span>
       <h1>${title}</h1>
       <p>${message}</p>
       <a class="btn btn-primary" href="/">${icon("arrowLeft")}Bosh sahifaga qaytish</a>
-    </section>`;
-  return layout({ title, body });
+    </section>`,
+  };
 }
 
 export function renderNotFound() {
   return errorPage({
     title: "Sahifa topilmadi",
-    message: "Qidirayotgan sahifangiz mavjud emas yoki guruh o'chirilgan.",
+    message: "Qidirayotgan sahifangiz mavjud emas yoki o'chirilgan.",
     code: "404",
+  });
+}
+
+export function renderForbidden() {
+  return errorPage({
+    title: "Ruxsat yo'q",
+    message: "Bu amal uchun ruxsatingiz yo'q yoki sahifa eskirgan. Sahifani yangilab, qaytadan urinib ko'ring.",
+    code: "403",
   });
 }
 
