@@ -7,11 +7,11 @@ const FAVICON =
 
 export function layout({ title, body, active = "" }) {
   return `<!doctype html>
-<html lang="en">
+<html lang="uz">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>${escapeHtml(title)} · Attendance</title>
+  <title>${escapeHtml(title)} · Davomat</title>
   <link rel="icon" href="${FAVICON}">
   <link rel="stylesheet" href="/public/styles.css">
 </head>
@@ -20,10 +20,10 @@ export function layout({ title, body, active = "" }) {
     <div class="topbar-inner">
       <a class="brand" href="/">
         <span class="brand-mark">${icon("check")}</span>
-        <span class="brand-name">Attendance</span>
+        <span class="brand-name">Davomat</span>
       </a>
-      <nav class="topnav" aria-label="Main navigation">
-        <a class="${active === "dashboard" ? "is-active" : ""}" href="/">Dashboard</a>
+      <nav class="topnav" aria-label="Asosiy navigatsiya">
+        <a class="${active === "dashboard" ? "is-active" : ""}" href="/">Bosh sahifa</a>
       </nav>
       <span class="topbar-date">${icon("calendar")}${escapeHtml(formatLongDate(todayISO()))}</span>
     </div>
@@ -31,7 +31,7 @@ export function layout({ title, body, active = "" }) {
   <main class="page">
     ${body}
   </main>
-  <footer class="site-footer">Attendance system · Students, groups and daily sessions</footer>
+  <footer class="site-footer">Davomat tizimi · Talabalar, guruhlar va kunlik darslar</footer>
   <script src="/public/app.js" defer></script>
 </body>
 </html>`;

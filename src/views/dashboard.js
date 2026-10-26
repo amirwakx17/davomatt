@@ -38,29 +38,29 @@ function groupCard(group) {
         <div class="group-figures">
           <div>
             <strong>${total}</strong>
-            <span>Students</span>
+            <span>Talabalar</span>
           </div>
           <div>
             <strong>${present}<span class="muted"> / ${total}</span></strong>
-            <span>Present today</span>
+            <span>Bugun kelgan</span>
           </div>
           <div>
             <strong>${rate === null ? "&mdash;" : `${rate}%`}</strong>
-            <span>Attendance rate</span>
+            <span>Davomat foizi</span>
           </div>
         </div>
-        <div class="progress" role="img" aria-label="${present} present, ${absent} absent, ${Math.max(total - marked, 0)} unmarked">
+        <div class="progress" role="img" aria-label="${present} kelgan, ${absent} kelmagan, ${Math.max(total - marked, 0)} belgilanmagan">
           <span class="progress-present" style="width:${presentWidth}%"></span>
           <span class="progress-absent" style="width:${absentWidth}%"></span>
         </div>
         <div class="group-card-status">
           ${
             marked > 0
-              ? `<span class="status-dot status-dot-saved"></span><span>${marked} marked today</span>`
-              : `<span class="status-dot"></span><span>Not recorded yet</span>`
+              ? `<span class="status-dot status-dot-saved"></span><span>${marked} talaba belgilangan</span>`
+              : `<span class="status-dot"></span><span>Hali kiritilmagan</span>`
           }
           <a class="card-link" href="/groups/${group.id}/attendance">
-            ${marked > 0 ? "Review attendance" : "Take attendance"}
+            ${marked > 0 ? "Davomatni ko'rish" : "Davomat olish"}
             ${icon("arrowRight")}
           </a>
         </div>
@@ -85,7 +85,7 @@ function recentRow(session) {
       <td><span class="count count-absent">${session.absent}</span></td>
       <td class="hide-sm"><span class="chip chip-neutral">${rate}%</span></td>
       <td class="cell-action">
-        <a class="icon-link" href="/groups/${session.group_id}/attendance?date=${session.date}" aria-label="Open session from ${escapeHtml(formatLongDate(session.date))}">
+        <a class="icon-link" href="/groups/${session.group_id}/attendance?date=${session.date}" aria-label="${escapeHtml(formatLongDate(session.date))} sanasidagi darsni ochish">
           ${icon("arrowRight")}
         </a>
       </td>
@@ -101,54 +101,54 @@ export function renderDashboard({ today, groups, totals, studentTotal, recent })
       ? `<table class="table">
           <thead>
             <tr>
-              <th scope="col">Group</th>
-              <th scope="col">Date</th>
-              <th scope="col">Present</th>
-              <th scope="col">Absent</th>
-              <th scope="col" class="hide-sm">Rate</th>
-              <th scope="col"><span class="visually-hidden">Open</span></th>
+              <th scope="col">Guruh</th>
+              <th scope="col">Sana</th>
+              <th scope="col">Kelgan</th>
+              <th scope="col">Kelmagan</th>
+              <th scope="col" class="hide-sm">Foiz</th>
+              <th scope="col"><span class="visually-hidden">Ochish</span></th>
             </tr>
           </thead>
           <tbody>${recent.map(recentRow).join("")}</tbody>
         </table>`
-      : `<div class="empty-state">No attendance has been saved yet.</div>`;
+      : `<div class="empty-state">Hali davomat saqlanmagan.</div>`;
 
   const body = `
     <section class="hero">
       <div>
-        <p class="eyebrow">Overview</p>
-        <h1>Attendance overview</h1>
-        <p class="lede">Track daily attendance across your groups and keep every lesson on record.</p>
+        <p class="eyebrow">Umumiy ko'rinish</p>
+        <h1>Davomat bo'yicha umumiy ko'rinish</h1>
+        <p class="lede">Guruhlaringizdagi kundalik davomatni nazorat qiling va har bir darsni hisobda turing.</p>
       </div>
       <span class="date-pill">${icon("calendar")}${escapeHtml(formatLongDate(today))}</span>
     </section>
 
-    <section class="stats-grid" aria-label="Overview statistics">
+    <section class="stats-grid" aria-label="Umumiy statistika">
       ${statCard({
-        label: "Groups",
+        label: "Guruhlar",
         value: groups.length,
-        hint: "Active groups",
+        hint: "Faol guruhlar",
         iconName: "layers",
         tone: "orange",
       })}
       ${statCard({
-        label: "Students",
+        label: "Talabalar",
         value: studentTotal,
-        hint: "Across all groups",
+        hint: "Barcha guruhlar bo'yicha",
         iconName: "users",
         tone: "blue",
       })}
       ${statCard({
-        label: "Present today",
+        label: "Bugun kelgan",
         value: totals.present,
-        hint: markedToday > 0 ? "Marked today" : "No sessions yet",
+        hint: markedToday > 0 ? "Bugun belgilangan" : "Hali dars o'tilmagan",
         iconName: "checkCircle",
         tone: "green",
       })}
       ${statCard({
-        label: "Absent today",
+        label: "Bugun kelmagan",
         value: totals.absent,
-        hint: markedToday > 0 ? "Marked today" : "No sessions yet",
+        hint: markedToday > 0 ? "Bugun belgilangan" : "Hali dars o'tilmagan",
         iconName: "xCircle",
         tone: "red",
       })}
@@ -157,27 +157,27 @@ export function renderDashboard({ today, groups, totals, studentTotal, recent })
     <section class="section" id="groups">
       <div class="section-head">
         <div>
-          <h2>Your groups</h2>
-          <p class="muted">Choose a group to mark today&rsquo;s attendance.</p>
+          <h2>Sizning guruhlaringiz</h2>
+          <p class="muted">Bugungi davomatni belgilash uchun guruh tanlang.</p>
         </div>
-        <span class="chip chip-soft">${groups.length} groups</span>
+        <span class="chip chip-soft">${groups.length} ta guruh</span>
       </div>
       ${
         groups.length > 0
           ? `<div class="group-grid">${groupCards}</div>`
-          : `<div class="panel empty-state">No groups have been added yet.</div>`
+          : `<div class="panel empty-state">Hali guruh qo'shilmagan.</div>`
       }
     </section>
 
     <section class="section">
       <div class="section-head">
         <div>
-          <h2>Recent sessions</h2>
-          <p class="muted">Latest saved attendance sheets.</p>
+          <h2>So'nggi darslar</h2>
+          <p class="muted">Oxirgi saqlangan davomat varaqlari.</p>
         </div>
       </div>
       <div class="panel table-panel">${recentTable}</div>
     </section>`;
 
-  return layout({ title: "Dashboard", body, active: "dashboard" });
+  return layout({ title: "Bosh sahifa", body, active: "dashboard" });
 }

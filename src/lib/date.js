@@ -35,17 +35,17 @@ export function addDaysISO(value, days) {
 }
 
 export function formatLongDate(value) {
-  return new Intl.DateTimeFormat("en-US", {
-    weekday: "short",
-    month: "short",
+  return new Intl.DateTimeFormat("uz-UZ", {
+    weekday: "long",
     day: "numeric",
+    month: "long",
     year: "numeric",
   }).format(parseISODate(value));
 }
 
 export function formatShortDate(value) {
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
+  return new Intl.DateTimeFormat("uz-UZ", {
     day: "numeric",
+    month: "short",
   }).format(parseISODate(value));
 }

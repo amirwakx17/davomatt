@@ -50,7 +50,7 @@
       if (progress) {
         progress.setAttribute(
           "aria-label",
-          `${counts.present} present, ${counts.absent} absent, ${counts.unmarked} unmarked`
+          `${counts.present} kelgan, ${counts.absent} kelmagan, ${counts.unmarked} belgilanmagan`
         );
       }
     };

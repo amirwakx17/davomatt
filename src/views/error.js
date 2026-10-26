@@ -7,23 +7,23 @@ function errorPage({ title, message, code }) {
       <span class="error-code">${code}</span>
       <h1>${title}</h1>
       <p>${message}</p>
-      <a class="btn btn-primary" href="/">${icon("arrowLeft")}Back to dashboard</a>
+      <a class="btn btn-primary" href="/">${icon("arrowLeft")}Bosh sahifaga qaytish</a>
     </section>`;
   return layout({ title, body });
 }
 
 export function renderNotFound() {
   return errorPage({
-    title: "Page not found",
-    message: "The page you are looking for does not exist or the group has been removed.",
+    title: "Sahifa topilmadi",
+    message: "Qidirayotgan sahifangiz mavjud emas yoki guruh o'chirilgan.",
     code: "404",
   });
 }
 
 export function renderServerError() {
   return errorPage({
-    title: "Something went wrong",
-    message: "The server could not complete this request. Please try again.",
+    title: "Xatolik yuz berdi",
+    message: "So'rovni bajarib bo'lmadi. Iltimos, qaytadan urinib ko'ring.",
     code: "500",
   });
 }

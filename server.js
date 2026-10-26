@@ -208,12 +208,12 @@ const server = createServer((req, res) => {
 
 server.on("error", (error) => {
   if (error.code === "EADDRINUSE") {
-    console.error(`Port ${port} is already in use. Set a different PORT and try again.`);
+    console.error(`Port ${port} band. Boshqa PORT qiymati bilan qayta urinib ko'ring.`);
     process.exit(1);
   }
   throw error;
 });
 
 server.listen(port, () => {
-  console.log(`Attendance system running at http://localhost:${port}`);
+  console.log(`Davomat tizimi ishga tushdi: http://localhost:${port}`);
 });

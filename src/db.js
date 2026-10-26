@@ -43,9 +43,9 @@ db.exec(`
 
 const SEED_GROUPS = [
   {
-    name: "Group 1",
-    course: "Programming Course",
-    schedule: "9:00 AM",
+    name: "1-guruh",
+    course: "Dasturlash",
+    schedule: "9:00",
     students: [
       "Ali Valiyev",
       "Malika Karimova",
@@ -58,9 +58,9 @@ const SEED_GROUPS = [
     ],
   },
   {
-    name: "Group 2",
-    course: "Web Development",
-    schedule: "11:00 AM",
+    name: "2-guruh",
+    course: "Veb-dasturlash",
+    schedule: "11:00",
     students: [
       "Aziz Mahmudov",
       "Laylo Qodirova",
@@ -72,9 +72,9 @@ const SEED_GROUPS = [
     ],
   },
   {
-    name: "Group 3",
-    course: "Data Science",
-    schedule: "2:00 PM",
+    name: "3-guruh",
+    course: "Ma'lumotlar tahlili",
+    schedule: "14:00",
     students: [
       "Dilnoza Abdullayeva",
       "Sanjar Qosimov",
