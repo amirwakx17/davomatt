@@ -4,9 +4,9 @@ import { icon } from "../lib/icons.js";
 import { layout } from "./layout.js";
 
 const ERROR_MESSAGES = {
-  mark: "Please mark every student before saving.",
-  date: "Please choose a valid lesson date.",
-  empty: "This group has no students yet.",
+  mark: "Saqlashdan oldin har bir talabani belgilang.",
+  date: "Iltimos, to'g'ri dars sanasini tanlang.",
+  empty: "Bu guruhda hali talabalar yo'q.",
 };
 
 function studentRow(student, index, status) {
@@ -19,14 +19,14 @@ function studentRow(student, index, status) {
       <span class="avatar ${toneFor(student.full_name)}">${escapeHtml(initials(student.full_name))}</span>
       <div class="student-info">
         <strong>${escapeHtml(student.full_name)}</strong>
-        <span>Student ${position}</span>
+        <span>${position}-talaba</span>
       </div>
-      <div class="segmented" role="group" aria-label="Attendance for ${escapeHtml(student.full_name)}">
+      <div class="segmented" role="group" aria-label="Davomat: ${escapeHtml(student.full_name)}">
         <button type="button" class="seg seg-present${isPresent ? " is-active" : ""}" data-status="present" aria-pressed="${isPresent}">
-          ${icon("check")}<span>Present</span>
+          ${icon("check")}<span>Kelgan</span>
         </button>
         <button type="button" class="seg seg-absent${isAbsent ? " is-active" : ""}" data-status="absent" aria-pressed="${isAbsent}">
-          ${icon("x")}<span>Absent</span>
+          ${icon("x")}<span>Kelmagan</span>
         </button>
       </div>
       <input type="hidden" name="status-${student.id}" value="${escapeHtml(status)}" data-status-input>
@@ -42,13 +42,13 @@ export function renderAttendancePage({ group, students, date, statuses, saved, e
   const presentWidth = total > 0 ? (present / total) * 100 : 0;
   const absentWidth = total > 0 ? (absent / total) * 100 : 0;
   const savedLabel =
-    marked === 0 ? "Not saved" : marked === total ? "Saved" : `${marked}/${total} saved`;
+    marked === 0 ? "Saqlanmagan" : marked === total ? "Saqlangan" : `${marked}/${total} saqlangan`;
   const savedChipClass = marked === 0 ? "chip-neutral" : marked === total ? "chip-green" : "chip-amber";
 
   const successFlash = saved
     ? `<div class="flash flash-success" role="status">
          ${icon("checkCircle")}
-         <span>Attendance for <strong>${escapeHtml(formatLongDate(date))}</strong> was saved.</span>
+         <span><strong>${escapeHtml(formatLongDate(date))}</strong> sanasidagi davomat saqlandi.</span>
        </div>`
     : "";
 
@@ -68,41 +68,41 @@ export function renderAttendancePage({ group, students, date, statuses, saved, e
           <input type="hidden" name="date" value="${escapeHtml(date)}">
           <div class="student-list">${rows}</div>
           <div class="form-error" id="form-error" hidden>
-            ${icon("xCircle")}<span>Please mark every student before saving.</span>
+            ${icon("xCircle")}<span>Saqlashdan oldin har bir talabani belgilang.</span>
           </div>
           <footer class="sheet-footer">
             <div class="quick-actions">
-              <button type="button" class="btn btn-ghost btn-sm" data-mark-all="present">Mark all present</button>
-              <button type="button" class="btn btn-ghost btn-sm" data-mark-all="absent">Mark all absent</button>
+              <button type="button" class="btn btn-ghost btn-sm" data-mark-all="present">Barchasini kelgan</button>
+              <button type="button" class="btn btn-ghost btn-sm" data-mark-all="absent">Barchasini kelmagan</button>
             </div>
             <div class="sheet-summary" aria-live="polite">
-              <span class="summary-present"><b data-count="present">${present}</b> present</span>
-              <span class="summary-absent"><b data-count="absent">${absent}</b> absent</span>
-              <span class="summary-unmarked"><b data-count="unmarked">${unmarked}</b> unmarked</span>
+              <span class="summary-present"><b data-count="present">${present}</b> kelgan</span>
+              <span class="summary-absent"><b data-count="absent">${absent}</b> kelmagan</span>
+              <span class="summary-unmarked"><b data-count="unmarked">${unmarked}</b> belgilanmagan</span>
             </div>
-            <button class="btn btn-primary" type="submit">${icon("clipboard")}Take attendance</button>
+            <button class="btn btn-primary" type="submit">${icon("clipboard")}Davomatni saqlash</button>
           </footer>
         </form>`
-      : `<div class="empty-state">This group has no students yet.</div>`;
+      : `<div class="empty-state">Bu guruhda hali talabalar yo'q.</div>`;
 
   const body = `
-    <nav class="breadcrumb" aria-label="Breadcrumb">
-      <a href="/">${icon("arrowLeft")}Dashboard</a>
+    <nav class="breadcrumb" aria-label="Navigatsiya">
+      <a href="/">${icon("arrowLeft")}Bosh sahifa</a>
       <span aria-hidden="true">/</span>
       <span>${escapeHtml(group.name)}</span>
     </nav>
 
     <section class="sheet-head">
       <div>
-        <p class="eyebrow">Attendance details</p>
+        <p class="eyebrow">Davomat varag'i</p>
         <h1>${escapeHtml(group.name)}</h1>
-        <p class="lede">${escapeHtml(group.course)} · ${escapeHtml(group.schedule)} · ${total} students</p>
+        <p class="lede">${escapeHtml(group.course)} · ${escapeHtml(group.schedule)} · ${total} ta talaba</p>
       </div>
       <form class="date-picker" method="get" action="/groups/${group.id}/attendance">
-        <label for="lesson-date">Lesson date</label>
+        <label for="lesson-date">Dars sanasi</label>
         <div class="date-control">
           <input type="date" id="lesson-date" name="date" value="${escapeHtml(date)}">
-          <button class="btn btn-secondary btn-sm" type="submit">Load</button>
+          <button class="btn btn-secondary btn-sm" type="submit">Yuklash</button>
         </div>
       </form>
     </section>
@@ -114,8 +114,8 @@ export function renderAttendancePage({ group, students, date, statuses, saved, e
       <section class="panel sheet">
         <header class="sheet-header">
           <div>
-            <h2>Students</h2>
-            <p class="muted">${total} ${total === 1 ? "student" : "students"} in this group</p>
+            <h2>Talabalar</h2>
+            <p class="muted">Bu guruhda ${total} ta talaba</p>
           </div>
           <span class="chip ${savedChipClass}">${escapeHtml(savedLabel)}</span>
         </header>
@@ -125,43 +125,43 @@ export function renderAttendancePage({ group, students, date, statuses, saved, e
       <aside class="sheet-aside">
         <section class="panel details">
           <div class="details-head">
-            <h2>Attendance details</h2>
+            <h2>Davomat tafsilotlari</h2>
             <span class="chip ${savedChipClass}">${escapeHtml(savedLabel)}</span>
           </div>
           <dl>
-            <div><dt>Group</dt><dd>${escapeHtml(group.name)}</dd></div>
-            <div><dt>Date</dt><dd>${escapeHtml(formatLongDate(date))}</dd></div>
-            <div><dt>Course</dt><dd>${escapeHtml(group.course)}</dd></div>
-            <div><dt>Schedule</dt><dd>${escapeHtml(group.schedule)}</dd></div>
-            <div><dt>Students</dt><dd>${total}</dd></div>
+            <div><dt>Guruh</dt><dd>${escapeHtml(group.name)}</dd></div>
+            <div><dt>Sana</dt><dd>${escapeHtml(formatLongDate(date))}</dd></div>
+            <div><dt>Kurs</dt><dd>${escapeHtml(group.course)}</dd></div>
+            <div><dt>Dars vaqti</dt><dd>${escapeHtml(group.schedule)}</dd></div>
+            <div><dt>Talabalar</dt><dd>${total}</dd></div>
           </dl>
           <div class="details-progress">
             <div class="details-progress-head">
-              <span>Session progress</span>
+              <span>Dars jarayoni</span>
               <span data-count="marked">${marked} / ${total}</span>
             </div>
-            <div class="progress progress-lg" id="session-progress" role="img" aria-label="${present} present, ${absent} absent, ${unmarked} unmarked">
+            <div class="progress progress-lg" id="session-progress" role="img" aria-label="${present} kelgan, ${absent} kelmagan, ${unmarked} belgilanmagan">
               <span class="progress-present" data-bar="present" style="width:${presentWidth}%"></span>
               <span class="progress-absent" data-bar="absent" style="width:${absentWidth}%"></span>
             </div>
             <p class="details-counts">
-              <span class="summary-present"><b data-count="present">${present}</b> present</span>
-              <span class="summary-absent"><b data-count="absent">${absent}</b> absent</span>
-              <span class="summary-unmarked"><b data-count="unmarked">${unmarked}</b> unmarked</span>
+              <span class="summary-present"><b data-count="present">${present}</b> kelgan</span>
+              <span class="summary-absent"><b data-count="absent">${absent}</b> kelmagan</span>
+              <span class="summary-unmarked"><b data-count="unmarked">${unmarked}</b> belgilanmagan</span>
             </p>
           </div>
         </section>
 
         <section class="panel tip">
-          <h2>How it works</h2>
+          <h2>Qanday ishlaydi</h2>
           <ol>
-            <li><strong>Pick the lesson date.</strong> Each date keeps its own sheet.</li>
-            <li><strong>Mark every student</strong> as present or absent.</li>
-            <li><strong>Press &ldquo;Take attendance&rdquo;</strong> to save the session.</li>
+            <li><strong>Dars sanasini tanlang.</strong> Har bir sana uchun alohida varaq saqlanadi.</li>
+            <li><strong>Har bir talabani belgilang</strong> — kelgan yoki kelmagan.</li>
+            <li><strong>«Davomatni saqlash» tugmasini bosing</strong> — dars hisobga olinadi.</li>
           </ol>
         </section>
       </aside>
     </div>`;
 
-  return layout({ title: `${group.name} attendance`, body });
+  return layout({ title: `${group.name} · Davomat`, body });
 }
